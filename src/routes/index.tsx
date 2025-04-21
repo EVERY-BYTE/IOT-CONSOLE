@@ -1,26 +1,28 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import DashboardView from "../pages/Dashboard";
-import LoginView from "../pages/Login";
+import LoginView from "../pages/auth/LoginView";
 import AppLayout from "../layouts/AppLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useState, useEffect } from "react";
 import ErrorPage from "../pages/404";
 import ProfileView from "../pages/profile/Index";
+import SignUpView from "../pages/auth/SignUpView";
+import ListDeviceView from "../pages/device/ListDeviceView";
+import CreateDeviceView from "../pages/device/CreateDeviceView";
 
 export default function AppRouters() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
+      setAuthChecked(true);
     });
     return () => unsubscribe();
   }, []);
-
-  console.log("____is authenticated");
-  console.log(isAuthenticated);
 
   const routers: { path: string; element: JSX.Element }[] = [];
   const authRouters: { path: string; element: JSX.Element }[] = [
@@ -32,12 +34,24 @@ export default function AppRouters() {
       path: "/login",
       element: <LoginView />,
     },
+    {
+      path: "/signup",
+      element: <SignUpView />,
+    },
   ];
 
   const mainRouters: { path: string; element: JSX.Element }[] = [
     {
       path: "/",
       element: <DashboardView />,
+    },
+    {
+      path: "/devices",
+      element: <ListDeviceView />,
+    },
+    {
+      path: "/devices/create",
+      element: <CreateDeviceView />,
     },
     {
       path: "/my-profile",
@@ -51,7 +65,9 @@ export default function AppRouters() {
     routers.push(...authRouters);
   }
 
-  console.log(routers);
+  if (!authChecked) {
+    return <div>Loading...</div>;
+  }
 
   const appRouters = createBrowserRouter([
     {

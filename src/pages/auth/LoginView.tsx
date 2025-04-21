@@ -1,4 +1,3 @@
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import {
   Button,
@@ -8,7 +7,8 @@ import {
   Box,
   TextField,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { firebaseAuth } from "../../firebase/auth";
 
 const LoginView = () => {
   const navigate = useNavigate();
@@ -18,11 +18,10 @@ const LoginView = () => {
 
   const handleSubmit = async () => {
     try {
-      const auth = getAuth();
       try {
-        await signInWithEmailAndPassword(auth, userEmail, userPassword);
+        await firebaseAuth.signIn(userEmail, userPassword);
         console.log("Login successful");
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.log(error);
       }
 
@@ -94,6 +93,19 @@ const LoginView = () => {
             >
               Login
             </Button>
+            <Typography sx={{ mt: 2, textAlign: "center" }}>
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                style={{
+                  color: "primary.main",
+                  fontWeight: "bold",
+                  textDecoration: "underline",
+                }}
+              >
+                Sign Up here
+              </Link>
+            </Typography>
           </Box>
         </Card>
       </Container>

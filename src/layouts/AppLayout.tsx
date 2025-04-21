@@ -33,8 +33,8 @@ import {
 } from "@mui/material";
 import { useAppContext } from "../context/app.context";
 import { IconMenus } from "../components/icon";
-import { useToken } from "../hooks/token";
 import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
+import { firebaseAuth } from "../firebase/auth";
 
 const drawerWidth = 240;
 
@@ -115,7 +115,7 @@ export default function AppLayout() {
 
   const menuItems = [
     { title: "Dashboard", link: "/", icon: <IconMenus.dashboard /> },
-    { title: "History", link: "/history", icon: <IconMenus.history /> },
+    { title: "Devices", link: "/devices", icon: <IconMenus.device /> },
     // { title: "Users", link: "/users", icon: <IconMenus.users /> },
     { title: "Profile", link: "/my-profile", icon: <IconMenus.profile /> },
   ];
@@ -235,8 +235,8 @@ export default function AppLayout() {
                 <MenuItem
                   onClick={() => {
                     handleCloseUserMenu();
-                    // removeToken()
                     navigate("/");
+                    firebaseAuth.signOut();
                     window.location.reload();
                   }}
                 >
