@@ -1,26 +1,64 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { firebaseDb } from "../../firebase/db";
-import { Button, Card, Typography, Box, TextField, Stack } from "@mui/material";
+import {
+  Button,
+  Card,
+  Typography,
+  Box,
+  TextField,
+  Stack,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material";
+import { IDeviceCreateModel } from "../../models/deviceModel";
+import { firebaseAuth } from "../../firebase/auth";
+import { removeDotsFromEmail } from "../../utilities/removeDotsFromEmail";
 
 export default function CreateDeviceView() {
   const [device, setDevice] = useState({
     deviceName: "",
     deviceId: uuidv4(),
+    deviceType: "",
+  });
+
+  const [currentUser, setCurrentUser] = useState({
+    email: "",
+    uid: "",
   });
 
   const handleSubmit = async () => {
     try {
-      console.log("sdsdsd");
-      await firebaseDb.create("devices", {
+      const dbPath = `${removeDotsFromEmail(currentUser.email)}/devices`;
+
+      const payload: IDeviceCreateModel = {
         deviceName: device.deviceName,
         deviceId: device.deviceId,
-      });
-      // window.history.back();
+        deviceUserName: currentUser.email,
+        deviceType: device.deviceType,
+      };
+
+      await firebaseDb.create(dbPath, payload);
+      window.history.back();
     } catch (error: unknown) {
       console.log(error);
     }
   };
+
+  const getCurrentUser = async () => {
+    const user = await firebaseAuth.getCurrentUser();
+    console.log(user);
+    setCurrentUser({
+      email: user?.email || "",
+      uid: user?.uid || "",
+    });
+  };
+
+  useEffect(() => {
+    getCurrentUser();
+  }, []);
 
   return (
     <>
@@ -59,6 +97,25 @@ export default function CreateDeviceView() {
               });
             }}
           />
+          <FormControl sx={{ m: 1 }}>
+            <InputLabel>Device Type</InputLabel>
+            <Select
+              value={device.deviceType}
+              label="Device Type"
+              onChange={(e) =>
+                setDevice({
+                  ...device,
+                  deviceType: e.target
+                    .value as IDeviceCreateModel["deviceType"],
+                })
+              }
+            >
+              <MenuItem value="TDS">TDS</MenuItem>
+              <MenuItem value="TEMPERATURE">Temperature</MenuItem>
+              <MenuItem value="HUMADITY">Humidity</MenuItem>
+              <MenuItem value="PH">pH</MenuItem>
+            </Select>
+          </FormControl>
           <Stack direction={"row"} justifyContent="flex-end">
             <Button
               sx={{

@@ -1,15 +1,11 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import BreadCrumberStyle from "../../components/breadcrumb/Index";
 import { IconMenus } from "../../components/icon";
 import { Card } from "@mui/material";
-import { useEffect, useState } from "react";
-import { IUserModel } from "../../models/userModel";
-import { convertTime } from "../../utilities/convertTime";
-import { useNavigate } from "react-router-dom";
+import { firebaseAuth } from "../../firebase/auth";
 
 const ProfileView = () => {
-  const [detailProfile, setDetailProfile] = useState<IUserModel>();
-  const navigation = useNavigate();
+  const currentUser = firebaseAuth.getCurrentUser();
 
   return (
     <Box>
@@ -30,18 +26,15 @@ const ProfileView = () => {
           justifyContent={"space-between"}
         >
           <h1>My Profile</h1>
-          <Button
+          {/* <Button
             variant="outlined"
-            onClick={() =>
-              navigation("/my-profile/edit/" + detailProfile?.userId)
-            }
+            onClick={() => navigation("/my-profile/edit/" + currentUser?.uid)}
           >
             Edit
-          </Button>
+          </Button> */}
         </Stack>
         <table>
           <thead>
-            <th></th>
             <th></th>
             <th></th>
           </thead>
@@ -52,27 +45,16 @@ const ProfileView = () => {
               </td>
               <td>:</td>
               <td>
-                <Typography>{detailProfile?.userName}</Typography>
+                <Typography>{currentUser?.displayName ?? "_"}</Typography>
               </td>
             </tr>
             <tr>
               <td>
-                <Typography fontWeight={"Bold"}>Role</Typography>
+                <Typography fontWeight={"Bold"}>E-mail</Typography>
               </td>
               <td>:</td>
               <td>
-                <Typography>{detailProfile?.userRole}</Typography>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <Typography fontWeight={"Bold"}>Dibuat Pada</Typography>
-              </td>
-              <td>:</td>
-              <td>
-                <Typography>
-                  {convertTime(detailProfile?.createdAt + "")}
-                </Typography>
+                <Typography>{currentUser?.email ?? "_"}</Typography>
               </td>
             </tr>
           </tbody>

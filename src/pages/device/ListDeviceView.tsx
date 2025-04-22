@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Box from "@mui/material/Box";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
 import {
   GridRowsProp,
@@ -9,20 +9,22 @@ import {
   GridToolbarContainer,
   GridToolbarExport,
 } from "@mui/x-data-grid";
-import { Add } from "@mui/icons-material";
+import { Add, MoreOutlined } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { Button, Stack, TextField } from "@mui/material";
 import BreadCrumberStyle from "../../components/breadcrumb/Index";
 import { IconMenus } from "../../components/icon";
 import { useNavigate } from "react-router-dom";
 import Modal from "../../components/modal";
-import { convertTime } from "../../utilities/convertTime";
-import { IUserModel } from "../../models/userModel";
+import { firebaseDb } from "../../firebase/db";
+import { firebaseAuth } from "../../firebase/auth";
+import { removeDotsFromEmail } from "../../utilities/removeDotsFromEmail";
+import { IDeviceModel } from "../../models/deviceModel";
 
 export default function ListDeviceView() {
   const navigation = useNavigate();
   const [tableData, setTableData] = useState<GridRowsProp[]>([]);
-  const [modalDeleteData, setModalDeleteData] = useState<IUserModel>();
+  const [modalDeleteData, setModalDeleteData] = useState<IDeviceModel>();
   const [openModalDelete, setOpenModalDelete] = useState<boolean>(false);
 
   const [paginationModel, setPaginationModel] = useState({
@@ -30,18 +32,50 @@ export default function ListDeviceView() {
     page: 0,
   });
 
-  const handleDeleteUser = async (userId: string) => {
-    window.location.reload();
+  const handleDeleteDevice = async (deviceId: string) => {
+    try {
+      const currentUser = await firebaseAuth.getCurrentUser();
+      const email = removeDotsFromEmail(currentUser?.email ?? "");
+      await firebaseDb.delete(`${email}/devices/${deviceId}`);
+      getTableData({ search: "" });
+      setOpenModalDelete(false);
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
   };
 
-  const handleOpenModalDelete = (data: IUserModel) => {
+  const handleOpenModalDelete = (data: IDeviceModel) => {
     setModalDeleteData(data);
     setOpenModalDelete(!openModalDelete);
   };
 
   const getTableData = async ({ search }: { search: string }) => {
     try {
-    } catch (error: any) {
+      const currentUser = await firebaseAuth.getCurrentUser();
+      const email = removeDotsFromEmail(currentUser?.email ?? "");
+      const data = await firebaseDb.readAll(`${email}/devices`);
+
+      const formattedData = Object.entries(data).map(
+        ([deviceId, deviceData]) => ({
+          id: deviceId,
+          deviceId: deviceId,
+          ...(deviceData as object),
+        })
+      ) as IDeviceModel[];
+
+      const filteredData = formattedData.filter((device) => {
+        if (!search) return true;
+        const searchLower = search.toLowerCase();
+        return (
+          device.deviceName?.toLowerCase().includes(searchLower) ||
+          device.deviceType?.toLowerCase().includes(searchLower)
+        );
+      }) as GridRowsProp[] | any;
+
+      console.log(filteredData);
+
+      setTableData(filteredData);
+    } catch (error: unknown) {
       console.log(error);
     }
   };
@@ -52,23 +86,16 @@ export default function ListDeviceView() {
 
   const columns: GridColDef[] = [
     {
-      field: "userName",
+      field: "deviceName",
       flex: 1,
-      renderHeader: () => <strong>{"User Name"}</strong>,
+      renderHeader: () => <strong>{"Name"}</strong>,
       editable: true,
     },
     {
-      field: "userRole",
+      field: "deviceType",
       flex: 1,
-      renderHeader: () => <strong>{"Role"}</strong>,
+      renderHeader: () => <strong>{"Type"}</strong>,
       editable: true,
-    },
-    {
-      field: "createdAt",
-      flex: 1,
-      renderHeader: () => <strong>{"Dibuat Pada"}</strong>,
-      editable: true,
-      valueFormatter: (item) => convertTime(item.value),
     },
     {
       field: "actions",
@@ -79,16 +106,16 @@ export default function ListDeviceView() {
       getActions: ({ row }) => {
         return [
           <GridActionsCellItem
-            icon={<EditIcon />}
-            label="Edit"
-            className="textPrimary"
-            onClick={() => navigation("edit/" + row.userId)}
-            color="inherit"
-          />,
-          <GridActionsCellItem
             icon={<DeleteIcon color="error" />}
             label="Delete"
             onClick={() => handleOpenModalDelete(row)}
+            color="inherit"
+          />,
+          <GridActionsCellItem
+            icon={<MoreOutlined color="info" />}
+            label="Detail"
+            className="textPrimary"
+            onClick={() => navigation("detail/" + row.id)}
             color="inherit"
           />,
         ];
@@ -103,11 +130,11 @@ export default function ListDeviceView() {
         <Stack direction="row" spacing={2}>
           <GridToolbarExport />
           <Button
-            onClick={() => navigation("create")}
             startIcon={<Add />}
             variant="outlined"
+            onClick={() => navigation("create")}
           >
-            Tambah User
+            Create
           </Button>
         </Stack>
         <Stack direction={"row"} spacing={1} alignItems={"center"}>
@@ -116,6 +143,11 @@ export default function ListDeviceView() {
             placeholder="search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                getTableData({ search });
+              }
+            }}
           />
           <Button variant="outlined" onClick={() => getTableData({ search })}>
             Search
@@ -130,9 +162,9 @@ export default function ListDeviceView() {
       <BreadCrumberStyle
         navigation={[
           {
-            label: "User",
-            link: "/users",
-            icon: <IconMenus.users fontSize="small" />,
+            label: "Device",
+            link: "/devices",
+            icon: <IconMenus.device fontSize="small" />,
           },
         ]}
       />
@@ -161,6 +193,7 @@ export default function ListDeviceView() {
           slots={{
             toolbar: CustomToolbar,
           }}
+          showToolbar
         />
       </Box>
 
@@ -168,10 +201,12 @@ export default function ListDeviceView() {
         openModal={openModalDelete}
         handleModalOnCancel={() => setOpenModalDelete(false)}
         message={
-          "Apakah anda yakin ingin menghapus user " + modalDeleteData?.userName
+          "Are you sure you want to delete device " +
+          modalDeleteData?.deviceName +
+          "?"
         }
         handleModal={() => {
-          handleDeleteUser(modalDeleteData?.userId ?? "");
+          handleDeleteDevice(modalDeleteData?.id ?? "");
           setOpenModalDelete(!openModalDelete);
         }}
       />

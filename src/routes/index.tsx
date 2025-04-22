@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import DashboardView from "../pages/Dashboard";
+import DashboardView from "../pages/dashboard/Dashboard";
 import LoginView from "../pages/auth/LoginView";
 import AppLayout from "../layouts/AppLayout";
 import AuthLayout from "../layouts/AuthLayout";
@@ -10,6 +10,7 @@ import ProfileView from "../pages/profile/Index";
 import SignUpView from "../pages/auth/SignUpView";
 import ListDeviceView from "../pages/device/ListDeviceView";
 import CreateDeviceView from "../pages/device/CreateDeviceView";
+import DetailDeviceView from "../pages/device/DetailDeviceView";
 
 export default function AppRouters() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -52,6 +53,10 @@ export default function AppRouters() {
     {
       path: "/devices/create",
       element: <CreateDeviceView />,
+    },
+    {
+      path: "/devices/detail/:deviceId",
+      element: <DetailDeviceView />,
     },
     {
       path: "/my-profile",
