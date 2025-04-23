@@ -41,20 +41,21 @@ const ProfileView = () => {
           <tbody>
             <tr>
               <td>
-                <Typography fontWeight={"Bold"}>User Name</Typography>
-              </td>
-              <td>:</td>
-              <td>
-                <Typography>{currentUser?.displayName ?? "_"}</Typography>
-              </td>
-            </tr>
-            <tr>
-              <td>
                 <Typography fontWeight={"Bold"}>E-mail</Typography>
               </td>
               <td>:</td>
               <td>
                 <Typography>{currentUser?.email ?? "_"}</Typography>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <Typography fontWeight={"Bold"}>User Name</Typography>
+              </td>
+              <td>:</td>
+              <td>
+                <Typography>{currentUser?.displayName ?? "_"}</Typography>
               </td>
             </tr>
           </tbody>

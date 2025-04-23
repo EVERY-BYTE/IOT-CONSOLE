@@ -116,7 +116,7 @@ export default function AppLayout() {
   const menuItems = [
     { title: "Dashboard", link: "/", icon: <IconMenus.dashboard /> },
     { title: "Devices", link: "/devices", icon: <IconMenus.device /> },
-    // { title: "Users", link: "/users", icon: <IconMenus.users /> },
+    { title: "Settings", link: "/settings", icon: <IconMenus.settings /> },
     { title: "Profile", link: "/my-profile", icon: <IconMenus.profile /> },
   ];
 
@@ -173,7 +173,7 @@ export default function AppLayout() {
                 textDecoration: "none",
               }}
             >
-              MAPS
+              DASBOARD
             </Typography>
 
             <AddLocationAltIcon
@@ -196,7 +196,7 @@ export default function AppLayout() {
                 textDecoration: "none",
               }}
             >
-              MAPS
+              DASBOARD
             </Typography>
             <Box
               sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}

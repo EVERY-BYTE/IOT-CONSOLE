@@ -100,7 +100,7 @@ export default function DetailDeviceView() {
       </Stack>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12}>
           <Card sx={{ p: 3, height: "100%" }}>
             <Typography variant="h6" gutterBottom>
               Device Info
@@ -111,7 +111,7 @@ export default function DetailDeviceView() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {deviceData.deviceType} Data Overview
