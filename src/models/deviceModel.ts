@@ -4,6 +4,12 @@ export interface IDeviceModel {
   deviceName: string;
   deviceUserName: string;
   deviceType: "TDS" | "TEMPERATURE" | "HUMADITY" | "PH";
+  deviceData: IDeviceData[];
+}
+
+interface IDeviceData {
+  value: number;
+  timeStamp: string;
 }
 
 export interface IDeviceCreateModel {

@@ -55,7 +55,7 @@ export default function AppRouters() {
       element: <CreateDeviceView />,
     },
     {
-      path: "/devices/detail/:deviceId",
+      path: "/devices/detail/:email/:deviceId",
       element: <DetailDeviceView />,
     },
     {

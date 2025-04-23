@@ -29,18 +29,56 @@ export default function CreateDeviceView() {
     uid: "",
   });
 
+  const createDevice = async () => {
+    const dbPath = `${removeDotsFromEmail(currentUser.email)}/devices`;
+
+    const payload: IDeviceCreateModel = {
+      deviceName: device.deviceName,
+      deviceId: device.deviceId,
+      deviceUserName: currentUser.email,
+      deviceType: device.deviceType,
+    };
+
+    await firebaseDb.create(dbPath, payload);
+  };
+
+  const createDeviceData = async () => {
+    const dbPath = `${removeDotsFromEmail(currentUser.email)}/deviceData/${
+      device.deviceId
+    }`;
+
+    const payload = {
+      deviceName: device.deviceName,
+      deviceId: device.deviceId,
+      deviceUserName: currentUser.email,
+      deviceType: device.deviceType,
+      deviceData: [
+        {
+          value: 0,
+          timeStamp: Date.now(),
+        },
+        {
+          value: 20,
+          timeStamp: Date.now(),
+        },
+        {
+          value: 33,
+          timeStamp: Date.now(),
+        },
+        {
+          value: 33,
+          timeStamp: Date.now(),
+        },
+      ],
+    };
+
+    await firebaseDb.create(dbPath, payload);
+  };
+
   const handleSubmit = async () => {
     try {
-      const dbPath = `${removeDotsFromEmail(currentUser.email)}/devices`;
-
-      const payload: IDeviceCreateModel = {
-        deviceName: device.deviceName,
-        deviceId: device.deviceId,
-        deviceUserName: currentUser.email,
-        deviceType: device.deviceType,
-      };
-
-      await firebaseDb.create(dbPath, payload);
+      await createDevice();
+      await createDeviceData();
       window.history.back();
     } catch (error: unknown) {
       console.log(error);

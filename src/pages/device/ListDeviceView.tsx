@@ -27,6 +27,9 @@ export default function ListDeviceView() {
   const [modalDeleteData, setModalDeleteData] = useState<IDeviceModel>();
   const [openModalDelete, setOpenModalDelete] = useState<boolean>(false);
 
+  const currentUser = firebaseAuth.getCurrentUser();
+  const email = removeDotsFromEmail(currentUser?.email ?? "");
+
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
@@ -34,8 +37,6 @@ export default function ListDeviceView() {
 
   const handleDeleteDevice = async (deviceId: string) => {
     try {
-      const currentUser = await firebaseAuth.getCurrentUser();
-      const email = removeDotsFromEmail(currentUser?.email ?? "");
       await firebaseDb.delete(`${email}/devices/${deviceId}`);
       getTableData({ search: "" });
       setOpenModalDelete(false);
@@ -51,8 +52,6 @@ export default function ListDeviceView() {
 
   const getTableData = async ({ search }: { search: string }) => {
     try {
-      const currentUser = await firebaseAuth.getCurrentUser();
-      const email = removeDotsFromEmail(currentUser?.email ?? "");
       const data = await firebaseDb.readAll(`${email}/devices`);
 
       const formattedData = Object.entries(data).map(
@@ -115,7 +114,7 @@ export default function ListDeviceView() {
             icon={<MoreOutlined color="info" />}
             label="Detail"
             className="textPrimary"
-            onClick={() => navigation("detail/" + row.id)}
+            onClick={() => navigation(`detail/${email}/${row.deviceId}`)}
             color="inherit"
           />,
         ];
