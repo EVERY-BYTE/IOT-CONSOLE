@@ -1,26 +1,29 @@
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <WiFi.h>
 #include <FirebaseESP32.h>
-#include <random>
 
-// Wi-Fi credentials
-#define WIFI_SSID "your_wifi_ssid"
-#define WIFI_PASSWORD "your_wifi_password"
+#define ONE_WIRE_BUS 4  // Pin data untuk DS18B20 hubungkan pin ke D2
+#define SOIL_MOISTURE_PIN A0  // Pin analog untuk sensor kelembaban tanah hubungkan ke pin 0
 
-// Firebase credentials
-#define FIREBASE_HOST "your_firebase_project.firebaseio.com"
-#define FIREBASE_AUTH "your_firebase_database_secret"
+#define WIFI_SSID "Fakir Bandwith" //ganti bagian ini 
+#define WIFI_PASSWORD "qwertyio" //ganti bagian ini
 
-// Create Firebase Data object
+#define FIREBASE_HOST "https://monitoring-sensor-tds-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define FIREBASE_AUTH "46Z3c44eIaTWYqMCN42zGLIzgBagdmGG36IHfeaZ"
+
+#define USER_EMAIL "fuck@mailcom" // Sanitized email (without @ symbol)
+#define TEMP_DEVICE_ID "2f8ba393-02fb-477a-b4f6-2c6696d8c36f"
+#define TDS_DEVICE_ID "39fce607-b91a-438b-9725-b9137df5ff28"
+
 FirebaseData firebaseData;
-
-// Paths for each sensor in Firebase
-String sensorPath = "sensor";
-int entryCount = 5; // Number of entries to maintain for each sensor
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 
 void setup() {
   Serial.begin(115200);
-  
-  // Connect to Wi-Fi
+  sensors.begin();
+
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -29,66 +32,40 @@ void setup() {
   }
   Serial.println(" connected");
 
-  // Initialize Firebase
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Firebase.reconnectWiFi(true);
-  
-  if (!Firebase.beginStream(firebaseData, "/sensor")) {
-    Serial.println("Could not connect to Firebase");
-    Serial.println(firebaseData.errorReason());
-  }
 }
 
 void loop() {
-  // Generate random sensor data for testing
-  float tdsValues[5] = {455, 356, 327, 407, 582};         // Sample TDS values
-  float tempValues[5] = {25.4, 26.1, 24.9, 26.5, 25.0};    // Sample temperature values
-  float humidityValues[5] = {60, 63, 58, 65, 62};          // Sample humidity values
-  float phValues[5] = {7.2, 6.9, 7.0, 7.3, 6.8};           // Sample pH values
+  sensors.requestTemperatures(); 
+  float temperatureC = sensors.getTempCByIndex(0);
 
-  unsigned long baseTimestamp = 1690848000000; // Starting timestamp for the sample data
+  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
+  float soilMoisturePercent = map(soilMoistureValue, 1023, 0, 0, 100); 
 
-  FirebaseJson json; // Main JSON object
+  unsigned long timestamp = millis();
 
-  // Loop through each entry count to create historical data
-  for (int i = 0; i < entryCount; i++) {
-    String entryKey = String(i + 1); // Keys "1", "2", "3", etc.
-    unsigned long timestamp = baseTimestamp + (i * 86400000); // Increment timestamp daily
+  // For Temperature device
+  String tempPath = "/" + String(USER_EMAIL) + "/deviceData/" + TEMP_DEVICE_ID + "/deviceData";
+  FirebaseJson tempData;
+  tempData.set("value", temperatureC);
+  tempData.set("timeStamp", timestamp);
+  Firebase.pushJSON(firebaseData, tempPath, tempData);
 
-    // TDS data
-    FirebaseJson tdsData;
-    tdsData.set("value", tdsValues[i]);
-    tdsData.set("timestamp", timestamp);
-    json.set(sensorPath + "/TDS/" + entryKey, tdsData);
+  // For TDS device
+  String tdsPath = "/" + String(USER_EMAIL) + "/deviceData/" + TDS_DEVICE_ID + "/deviceData";
+  FirebaseJson tdsData;
+  tdsData.set("value", soilMoisturePercent);
+  tdsData.set("timeStamp", timestamp);
+  Firebase.pushJSON(firebaseData, tdsPath, tdsData);
 
-    // pH data
-    FirebaseJson pHData;
-    pHData.set("value", phValues[i]);
-    pHData.set("timestamp", timestamp);
-    json.set(sensorPath + "/pH/" + entryKey, pHData);
+  Serial.print("Temperature: ");
+  Serial.print(temperatureC);
+  Serial.println(" °C");
 
-    // Temperature data
-    FirebaseJson tempData;
-    tempData.set("value", tempValues[i]);
-    tempData.set("timestamp", timestamp);
-    json.set(sensorPath + "/temperature/" + entryKey, tempData);
+  Serial.print("Soil Moisture: ");
+  Serial.print(soilMoisturePercent);
+  Serial.println("%");
 
-    // Humidity data
-    FirebaseJson humidityData;
-    humidityData.set("value", humidityValues[i]);
-    humidityData.set("timestamp", timestamp);
-    json.set(sensorPath + "/humidity/" + entryKey, humidityData);
-  }
-
-  // Push JSON data to Firebase
-  if (Firebase.setJSON(firebaseData, sensorPath, json)) {
-    Serial.println("Data sent to Firebase:");
-    Serial.println(json.raw());
-  } else {
-    Serial.println("Failed to send data to Firebase");
-    Serial.println(firebaseData.errorReason());
-  }
-
-  // Wait for the next transmission
-  delay(10000); // Send data every 10 seconds
+  delay(5000); 
 }

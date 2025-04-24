@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
-import { Card, Grid, Box, Stack, Typography } from "@mui/material";
+import { Card, Box, Stack, Typography } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import WaterIcon from "@mui/icons-material/Water";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
@@ -94,14 +95,18 @@ const DashboardView: React.FC = () => {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3} mb={3}>
+        <Grid container spacing={2}>
           {Object.entries(groupedDevices).map(([deviceType, devices]) => (
-            <Grid item xs={12} sm={6} md={3} key={deviceType}>
+            <Grid
+              container
+              rowSpacing={2}
+              columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+              key={deviceType}
+            >
               <Card
                 sx={{
                   p: 3,
-                  minWidth: 250,
-                  height: 180,
+                  // height: 180,
                   boxShadow: 3,
                   borderRadius: 4,
                   transition: "transform 0.3s, box-shadow 0.3s",
@@ -147,7 +152,7 @@ const DashboardView: React.FC = () => {
                         devices
                       </Typography>
                     </Typography>
-                    <Typography
+                    {/* <Typography
                       variant="caption"
                       sx={{
                         color: "text.secondary",
@@ -155,8 +160,8 @@ const DashboardView: React.FC = () => {
                         display: "block",
                       }}
                     >
-                      Sample Device: {devices[0]?.deviceName || "N/A"}
-                    </Typography>
+                      Name: {devices[0]?.deviceName || "N/A"}
+                    </Typography> */}
                   </Stack>
                 </Stack>
               </Card>

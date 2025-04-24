@@ -11,6 +11,7 @@ import SignUpView from "../pages/auth/SignUpView";
 import ListDeviceView from "../pages/device/ListDeviceView";
 import CreateDeviceView from "../pages/device/CreateDeviceView";
 import DetailDeviceView from "../pages/device/DetailDeviceView";
+import SettingView from "../pages/settings/SettingView";
 
 export default function AppRouters() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -57,6 +58,10 @@ export default function AppRouters() {
     {
       path: "/devices/detail/:email/:deviceId",
       element: <DetailDeviceView />,
+    },
+    {
+      path: "/settings",
+      element: <SettingView />,
     },
     {
       path: "/my-profile",

@@ -33,8 +33,8 @@ import {
 } from "@mui/material";
 import { useAppContext } from "../context/app.context";
 import { IconMenus } from "../components/icon";
-import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
 import { firebaseAuth } from "../firebase/auth";
+import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
 
 const drawerWidth = 240;
 
@@ -155,7 +155,7 @@ export default function AppLayout() {
             >
               <MenuIcon />
             </IconButton>
-            <AddLocationAltIcon
+            <SpaceDashboardIcon
               sx={{ display: { xs: "none", md: "flex" }, mr: 1 }}
             />
             <Typography
@@ -175,8 +175,7 @@ export default function AppLayout() {
             >
               DASBOARD
             </Typography>
-
-            <AddLocationAltIcon
+            <SpaceDashboardIcon
               sx={{ display: { xs: "flex", md: "none" }, mr: 1 }}
             />
             {/* <ArticleIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} /> */}
@@ -201,7 +200,6 @@ export default function AppLayout() {
             <Box
               sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}
             ></Box>
-
             <Box sx={{ flexGrow: 0 }}>
               <Tooltip title="Open settings">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
