@@ -6,8 +6,9 @@ import ReactApexChart from "react-apexcharts";
 import * as XLSX from "xlsx";
 import { IDeviceModel } from "../../models/deviceModel";
 import { firebaseDb } from "../../firebase/db";
+import { ApexOptions } from "apexcharts";
 
-const chartOptions = {
+const chartOptions: ApexOptions = {
   chart: {
     type: "area",
     height: 350,
@@ -43,11 +44,11 @@ export default function DetailDeviceView() {
       if (!deviceId) return;
 
       const path = `${email}/deviceData/${deviceId}`;
-      const result = await firebaseDb.read(path);
+      const result: any = await firebaseDb.read(path);
       const data = Object.values(result)[0] as IDeviceModel;
 
       console.log(
-        data.deviceData.map((entry: any) => ({
+        data.deviceValue.map((entry: any) => ({
           x: new Date(entry.timeStamp),
           y: entry.value,
         }))
@@ -58,7 +59,7 @@ export default function DetailDeviceView() {
         setChartSeries([
           {
             name: data.deviceType,
-            data: data.deviceData.map((entry: any) => ({
+            data: data.deviceValue.map((entry: any) => ({
               x: new Date(entry.timeStamp),
               y: entry.value,
             })),
@@ -78,7 +79,7 @@ export default function DetailDeviceView() {
     if (!deviceData) return;
 
     const worksheet = XLSX.utils.json_to_sheet(
-      deviceData.deviceData.map((entry: any) => ({
+      deviceData.deviceValue.map((entry: any) => ({
         timestamp: new Date(entry.timeStamp).toISOString(),
         value: entry.value,
       }))
@@ -114,13 +115,13 @@ export default function DetailDeviceView() {
         <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {deviceData.deviceType} Data Overview
+              {deviceData.deviceName} Chart
             </Typography>
             <ReactApexChart
               options={{
                 ...chartOptions,
                 colors: [getChartColor(deviceData.deviceType)],
-                title: { text: deviceData.deviceType },
+                title: { text: deviceData.deviceName },
               }}
               series={chartSeries}
               type="area"

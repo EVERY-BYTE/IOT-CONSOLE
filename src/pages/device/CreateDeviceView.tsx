@@ -52,21 +52,9 @@ export default function CreateDeviceView() {
       deviceId: device.deviceId,
       deviceUserName: currentUser.email,
       deviceType: device.deviceType,
-      deviceData: [
+      deviceValue: [
         {
           value: 0,
-          timeStamp: Date.now(),
-        },
-        {
-          value: 20,
-          timeStamp: Date.now(),
-        },
-        {
-          value: 33,
-          timeStamp: Date.now(),
-        },
-        {
-          value: 33,
           timeStamp: Date.now(),
         },
       ],
