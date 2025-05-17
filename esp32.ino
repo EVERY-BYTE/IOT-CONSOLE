@@ -1,71 +1,83 @@
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include <WiFi.h>
 #include <FirebaseESP32.h>
+#include <WiFiUdp.h>
 
-#define ONE_WIRE_BUS 4  // Pin data untuk DS18B20 hubungkan pin ke D2
-#define SOIL_MOISTURE_PIN A0  // Pin analog untuk sensor kelembaban tanah hubungkan ke pin 0
+#define SOIL_MOISTURE_PIN 16
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define FIREBASE_HOST "https://console-iot-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define FIREBASE_AUTH "AIzaSyC3fjOk-Xs7vN4eqbPbvgKzmhTCjo9DOQM"
+#define USER_NAME ""
+#define SOIL_SENSOR_ID ""
 
-#define WIFI_SSID "Fakir Bandwith" //ganti bagian ini 
-#define WIFI_PASSWORD "qwertyio" //ganti bagian ini
-
-#define FIREBASE_HOST "https://monitoring-sensor-tds-default-rtdb.asia-southeast1.firebasedatabase.app/"
-#define FIREBASE_AUTH "46Z3c44eIaTWYqMCN42zGLIzgBagdmGG36IHfeaZ"
-
-#define USER_EMAIL "fuck@mailcom" // Sanitized email (without @ symbol)
-#define TEMP_DEVICE_ID "2f8ba393-02fb-477a-b4f6-2c6696d8c36f"
-#define TDS_DEVICE_ID "39fce607-b91a-438b-9725-b9137df5ff28"
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 7 * 3600;
+const int daylightOffset_sec = 0;
 
 FirebaseData firebaseData;
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
+FirebaseAuth auth;
+FirebaseConfig config;
+WiFiUDP udp;
 
 void setup() {
   Serial.begin(115200);
-  sensors.begin();
-
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
+  Serial.print("Connecting to Wi-Fi...");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
   }
-  Serial.println(" connected");
+  Serial.println(" Connected!");
 
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  config.host = FIREBASE_HOST;
+  config.signer.tokens.legacy_token = FIREBASE_AUTH;
+  Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  Serial.println("Setting up NTP...");
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time from NTP.");
+  } else {
+    Serial.print("Current time: ");
+    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+  }
 }
 
 void loop() {
-  sensors.requestTemperatures(); 
-  float temperatureC = sensors.getTempCByIndex(0);
-
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  float soilMoisturePercent = map(soilMoistureValue, 1023, 0, 0, 100); 
+  float soilMoisturePercent = constrain(map(soilMoistureValue, 1023, 0, 0, 100), 0, 100);
 
-  unsigned long timestamp = millis();
+  struct tm timeinfo;
+  time_t epochTime;
+  if (getLocalTime(&timeinfo)) {
+    epochTime = mktime(&timeinfo);
+  } else {
+    epochTime = millis() / 1000;
+    Serial.println("Failed to get NTP time for timestamp, using uptime.");
+  }
 
-  // For Temperature device
-  String tempPath = "/" + String(USER_EMAIL) + "/deviceData/" + TEMP_DEVICE_ID + "/deviceData";
-  FirebaseJson tempData;
-  tempData.set("value", temperatureC);
-  tempData.set("timeStamp", timestamp);
-  Firebase.pushJSON(firebaseData, tempPath, tempData);
+  Serial.println("time");
+  Serial.println(epochTime);
 
-  // For TDS device
-  String tdsPath = "/" + String(USER_EMAIL) + "/deviceData/" + TDS_DEVICE_ID + "/deviceData";
-  FirebaseJson tdsData;
-  tdsData.set("value", soilMoisturePercent);
-  tdsData.set("timeStamp", timestamp);
-  Firebase.pushJSON(firebaseData, tdsPath, tdsData);
+  FirebaseJson soilJson;
+  soilJson.set("value", soilMoistureValue);
+  soilJson.set("timestamp", (unsigned long)epochTime);
 
-  Serial.print("Temperature: ");
-  Serial.print(temperatureC);
-  Serial.println(" °C");
+  if (Firebase.pushJSON(firebaseData, "/" USER_NAME "/deviceData/" SOIL_SENSOR_ID, soilJson)) {
+    Serial.println("Data sent to Firebase with NTP timestamp.");
+  } else {
+    Serial.print("Firebase push failed: ");
+    Serial.println(firebaseData.errorReason());
+  }
 
   Serial.print("Soil Moisture: ");
   Serial.print(soilMoisturePercent);
   Serial.println("%");
 
-  delay(5000); 
+  Serial.print("Soil Moisture Analog: ");
+  Serial.print(soilMoistureValue);
+
+  delay(60000); // Delay 60 seconds
 }

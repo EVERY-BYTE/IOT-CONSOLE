@@ -21,7 +21,7 @@ import { firebaseAuth } from "../../firebase/auth";
 import { removeDotsFromEmail } from "../../utilities/removeDotsFromEmail";
 import { IDeviceModel } from "../../models/deviceModel";
 
-export default function ListDeviceView() {
+export default function ListSensorView() {
   const navigation = useNavigate();
   const [tableData, setTableData] = useState<GridRowsProp[]>([]);
   const [modalDeleteData, setModalDeleteData] = useState<IDeviceModel>();
@@ -161,8 +161,8 @@ export default function ListDeviceView() {
       <BreadCrumberStyle
         navigation={[
           {
-            label: "Device",
-            link: "/devices",
+            label: "Sensors",
+            link: "/sensors",
             icon: <IconMenus.device fontSize="small" />,
           },
         ]}

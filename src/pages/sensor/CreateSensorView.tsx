@@ -17,7 +17,7 @@ import { IDeviceCreateModel } from "../../models/deviceModel";
 import { firebaseAuth } from "../../firebase/auth";
 import { removeDotsFromEmail } from "../../utilities/removeDotsFromEmail";
 
-export default function CreateDeviceView() {
+export default function CreateSensorView() {
   const [device, setDevice] = useState({
     deviceName: "",
     deviceId: uuidv4(),
@@ -52,21 +52,9 @@ export default function CreateDeviceView() {
       deviceId: device.deviceId,
       deviceUserName: currentUser.email,
       deviceType: device.deviceType,
-      deviceData: [
+      deviceValue: [
         {
           value: 0,
-          timeStamp: Date.now(),
-        },
-        {
-          value: 20,
-          timeStamp: Date.now(),
-        },
-        {
-          value: 33,
-          timeStamp: Date.now(),
-        },
-        {
-          value: 33,
           timeStamp: Date.now(),
         },
       ],
@@ -112,7 +100,7 @@ export default function CreateDeviceView() {
           color="primary"
           fontWeight={"bold"}
         >
-          Tambah Device
+          Add Sensor
         </Typography>
         <Box
           component="form"
@@ -123,7 +111,7 @@ export default function CreateDeviceView() {
           }}
         >
           <TextField
-            label="Device Name"
+            label="Sensor Name"
             id="outlined-start-adornment"
             sx={{ m: 1 }}
             value={device.deviceName}
@@ -136,10 +124,10 @@ export default function CreateDeviceView() {
             }}
           />
           <FormControl sx={{ m: 1 }}>
-            <InputLabel>Device Type</InputLabel>
+            <InputLabel>Sensor Type</InputLabel>
             <Select
               value={device.deviceType}
-              label="Device Type"
+              label="Sensor Type"
               onChange={(e) =>
                 setDevice({
                   ...device,
