@@ -8,10 +8,10 @@ import { useState, useEffect } from "react";
 import ErrorPage from "../pages/404";
 import ProfileView from "../pages/profile/Index";
 import SignUpView from "../pages/auth/SignUpView";
-import ListDeviceView from "../pages/device/ListDeviceView";
-import CreateDeviceView from "../pages/device/CreateDeviceView";
-import DetailDeviceView from "../pages/device/DetailDeviceView";
 import SettingView from "../pages/settings/SettingView";
+import ListSensorView from "../pages/sensor/ListSensorView";
+import CreateSensorView from "../pages/sensor/CreateSensorView";
+import DetailSensorView from "../pages/sensor/DetailSensorView";
 
 export default function AppRouters() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,16 +48,16 @@ export default function AppRouters() {
       element: <DashboardView />,
     },
     {
-      path: "/devices",
-      element: <ListDeviceView />,
+      path: "/sensors",
+      element: <ListSensorView />,
     },
     {
-      path: "/devices/create",
-      element: <CreateDeviceView />,
+      path: "/sensors/create",
+      element: <CreateSensorView />,
     },
     {
-      path: "/devices/detail/:email/:deviceId",
-      element: <DetailDeviceView />,
+      path: "/sensors/detail/:email/:sensorId",
+      element: <DetailSensorView />,
     },
     {
       path: "/settings",

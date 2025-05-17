@@ -115,7 +115,7 @@ export default function AppLayout() {
 
   const menuItems = [
     { title: "Dashboard", link: "/", icon: <IconMenus.dashboard /> },
-    { title: "Devices", link: "/devices", icon: <IconMenus.device /> },
+    { title: "Sensors", link: "/sensors", icon: <IconMenus.device /> },
     { title: "Settings", link: "/settings", icon: <IconMenus.settings /> },
     { title: "Profile", link: "/my-profile", icon: <IconMenus.profile /> },
   ];

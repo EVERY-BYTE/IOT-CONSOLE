@@ -77,63 +77,90 @@ export default function SettingView() {
       .join("\n");
 
     const code = `
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include <WiFi.h>
 #include <FirebaseESP32.h>
+#include <WiFiUdp.h>
 
-${devicePin}
+#define SOIL_MOISTURE_PIN 16
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define FIREBASE_HOST "https://console-iot-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define FIREBASE_AUTH "AIzaSyC3fjOk-Xs7vN4eqbPbvgKzmhTCjo9DOQM"
+#define USER_NAME ""
+#define SOIL_SENSOR_ID ""
 
-#define WIFI_SSID "Your_SSID"
-#define WIFI_PASSWORD "Your_Password"
-
-#define FIREBASE_HOST "${esp32Config.firebaseHost}"
-#define FIREBASE_AUTH "${esp32Config.firebaseAuth}"
-#define USER_NAME "${esp32Config.userEmail}"
-
-${deviceDefinitions}
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 7 * 3600;
+const int daylightOffset_sec = 0;
 
 FirebaseData firebaseData;
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
+FirebaseAuth auth;
+FirebaseConfig config;
+WiFiUDP udp;
 
 void setup() {
   Serial.begin(115200);
-  sensors.begin();
-
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
+  Serial.print("Connecting to Wi-Fi...");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
   }
+  Serial.println(" Connected!");
 
-  Serial.println(" connected");
-
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  config.host = FIREBASE_HOST;
+  config.signer.tokens.legacy_token = FIREBASE_AUTH;
+  Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  Serial.println("Setting up NTP...");
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time from NTP.");
+  } else {
+    Serial.print("Current time: ");
+    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+  }
 }
 
 void loop() {
-  sensors.requestTemperatures(); 
-  float temperatureC = sensors.getTempCByIndex(0);
-
   int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  float soilMoisturePercent = map(soilMoistureValue, 1023, 0, 0, 100); 
+  float soilMoisturePercent = constrain(map(soilMoistureValue, 1023, 0, 0, 100), 0, 100);
 
-  unsigned long timestamp = millis();
-  ${devicePaths}
+  struct tm timeinfo;
+  time_t epochTime;
+  if (getLocalTime(&timeinfo)) {
+    epochTime = mktime(&timeinfo);
+  } else {
+    epochTime = millis() / 1000;
+    Serial.println("Failed to get NTP time for timestamp, using uptime.");
+  }
 
-  Serial.print("Temperature: ");
-  Serial.print(temperatureC);
-  Serial.println(" °C");
+  Serial.println("time");
+  Serial.println(epochTime);
+
+  FirebaseJson soilJson;
+  soilJson.set("value", soilMoistureValue);
+  soilJson.set("timestamp", (unsigned long)epochTime);
+
+  if (Firebase.pushJSON(firebaseData, "/" USER_NAME "/deviceData/" SOIL_SENSOR_ID, soilJson)) {
+    Serial.println("Data sent to Firebase with NTP timestamp.");
+  } else {
+    Serial.print("Firebase push failed: ");
+    Serial.println(firebaseData.errorReason());
+  }
 
   Serial.print("Soil Moisture: ");
   Serial.print(soilMoisturePercent);
   Serial.println("%");
 
-  delay(5000); 
-}`;
+  Serial.print("Soil Moisture Analog: ");
+  Serial.print(soilMoistureValue);
+
+  delay(60000); // Delay 60 seconds
+}
+`;
 
     setEsp32Code(code);
   };
@@ -176,6 +203,34 @@ void loop() {
             autoHeight
           />
         </Box>
+      </Card>
+
+      <Card sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          📌 Petunjuk Upload Kode ke ESP32
+        </Typography>
+        <Typography
+          variant="body2"
+          component="div"
+          sx={{ whiteSpace: "pre-line" }}
+        >
+          {`
+1. Install Arduino IDE: https://www.arduino.cc/en/software
+2. Tambahkan ESP32 board URL ke Preferences:
+   https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+3. Install library: FirebaseESP32
+4. Install library NTPClient 
+5. Sambungkan ESP32 ke komputer via USB
+6. Copy kode di bawah dan paste ke Arduino IDE
+7. Isi:
+   - WIFI_SSID dan WIFI_PASSWORD
+   - SOIL_MOISTURE_PIN
+   - FIREBASE_HOST dan FIREBASE_AUTH
+   - USER_NAME dan SOIL_SENSOR_ID
+8. Upload ke board
+9. Lihat Serial Monitor, atur baudrate (115200)
+    `}
+        </Typography>
       </Card>
 
       <Card sx={{ p: 3, mb: 3 }}>
