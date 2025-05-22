@@ -8,6 +8,7 @@ import { removeDotsFromEmail } from "../../utilities/removeDotsFromEmail";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { IDeviceModel } from "../../models/deviceModel";
+import { firebaseConfig } from "../../firebase/configs";
 
 export default function SettingView() {
   const [loading, setLoading] = useState(true);
@@ -16,9 +17,8 @@ export default function SettingView() {
   const email = removeDotsFromEmail(currentUser?.email ?? "");
 
   const esp32Config = {
-    firebaseHost:
-      "https://monitoring-sensor-tds-default-rtdb.asia-southeast1.firebasedatabase.app/",
-    firebaseAuth: "46Z3c44eIaTWYqMCN42zGLIzgBagdmGG36IHfeaZ",
+    firebaseHost: firebaseConfig.databaseURL,
+    firebaseAuth: firebaseConfig.apiKey,
     userEmail: email,
   };
 
@@ -44,50 +44,33 @@ export default function SettingView() {
   }, [email]);
 
   const generateEsp32Code = (devices: IDeviceModel[]) => {
+    console.log(devices);
     console.log("Generating ESP32 code...");
-    const devicePin = devices
-      .map((device) => {
-        return `#define ${device.deviceName.toUpperCase()}_${device.deviceType.toUpperCase()}_PIN //your pin`;
-      })
-      .join("\n");
-
-    const deviceDefinitions = devices
-      .map(
-        (device) =>
-          `#define ${device.deviceName.toUpperCase()}_DEVICE_ID "${
-            device.deviceId
-          }"`
-      )
-      .join("\n");
-
-    const devicePaths = devices
-      .map(
-        (device) => `
-// For ${device.deviceName} device
-  String ${device.deviceName.toUpperCase()}_PATH = "/" + String(USER_NAME) + "/deviceData/" + ${device.deviceName.toUpperCase()}_DEVICE_ID + "/deviceValue";
-  FirebaseJson ${device.deviceName.toUpperCase()}_DATA;
-  ${device.deviceName.toUpperCase()}_DATA.set("value", ${
-          device.deviceType === "TEMPERATURE"
-            ? "temperatureC"
-            : "soilMoisturePercent"
-        });
-  ${device.deviceName.toUpperCase()}_DATA.set("timeStamp", timestamp);
-  Firebase.pushJSON(firebaseData, ${device.deviceName.toUpperCase()}_PATH, ${device.deviceName.toUpperCase()}_DATA);`
-      )
-      .join("\n");
-
     const code = `
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 #include <WiFiUdp.h>
+#include <DHT.h>
 
 #define SOIL_MOISTURE_PIN 16
+#define LDR_PIN 35
+#define DHT_PIN 4
+#define DHT_TYPE DHT11
+
+DHT dht(DHT_PIN, DHT_TYPE);
+
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
+
 #define FIREBASE_HOST "https://console-iot-default-rtdb.asia-southeast1.firebasedatabase.app/"
 #define FIREBASE_AUTH "AIzaSyC3fjOk-Xs7vN4eqbPbvgKzmhTCjo9DOQM"
+
 #define USER_NAME ""
-#define SOIL_SENSOR_ID ""
+
+const char* SOIL_SENSOR_ID = "";
+const char* LDR_SENSOR_ID  = "";
+const char* DHT_SENSOR_ID = "";
+
 
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 7 * 3600;
@@ -100,6 +83,12 @@ WiFiUDP udp;
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(SOIL_MOISTURE_PIN, INPUT);
+  pinMode(LDR_PIN, INPUT);
+  
+  dht.begin();
+
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi...");
   while (WiFi.status() != WL_CONNECTED) {
@@ -125,9 +114,6 @@ void setup() {
 }
 
 void loop() {
-  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  float soilMoisturePercent = constrain(map(soilMoistureValue, 1023, 0, 0, 100), 0, 100);
-
   struct tm timeinfo;
   time_t epochTime;
   if (getLocalTime(&timeinfo)) {
@@ -140,23 +126,62 @@ void loop() {
   Serial.println("time");
   Serial.println(epochTime);
 
-  FirebaseJson soilJson;
-  soilJson.set("value", soilMoistureValue);
-  soilJson.set("timestamp", (unsigned long)epochTime);
+  if (strlen(SOIL_SENSOR_ID) > 0) {
 
-  if (Firebase.pushJSON(firebaseData, "/" USER_NAME "/deviceData/" SOIL_SENSOR_ID, soilJson)) {
-    Serial.println("Data sent to Firebase with NTP timestamp.");
-  } else {
-    Serial.print("Firebase push failed: ");
-    Serial.println(firebaseData.errorReason());
+    int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
+
+    FirebaseJson soilJson;
+    soilJson.set("value", soilMoistureValue);
+    soilJson.set("timestamp", (unsigned long)epochTime);
+
+    if (Firebase.pushJSON(firebaseData, "/" USER_NAME "/deviceData/" SOIL_SENSOR_ID, soilJson)) {
+      Serial.println("Soil Moisture send to Firebase");
+    } else {
+      Serial.print("Soil Moisture data failed: ");
+      Serial.println(firebaseData.errorReason());
+    }
+
+    Serial.print("Soil Moisture: ");
+    Serial.print(soilMoistureValue);
   }
 
-  Serial.print("Soil Moisture: ");
-  Serial.print(soilMoisturePercent);
-  Serial.println("%");
 
-  Serial.print("Soil Moisture Analog: ");
-  Serial.print(soilMoistureValue);
+  if (strlen(LDR_SENSOR_ID) > 0) {
+
+    int ldrValue = analogRead(LDR_PIN);
+
+    FirebaseJson ldrJson;
+    ldrJson.set("value", ldrValue);
+    ldrJson.set("timestamp", (unsigned long)epochTime);
+
+    if (Firebase.pushJSON(firebaseData, "/" USER_NAME "/deviceData/" LDR_SENSOR_ID, ldrJson)) {
+      Serial.println("LDR data sent.");
+    } else {
+      Serial.print("LDR data failed: ");
+      Serial.println(firebaseData.errorReason());
+    }
+
+    Serial.print("LDR: ");
+    Serial.println(ldrValue);
+  }
+  
+  float temperature = dht.readTemperature();
+
+  if (strlen(DHT_SENSOR_ID) > 0 && !isnan(temperature)) {
+    FirebaseJson tempJson;
+    tempJson.set("value", temperature);
+    tempJson.set("timestamp", (unsigned long)epochTime);
+
+    if (Firebase.pushJSON(firebaseData, "/" + String(USER_NAME) + "/deviceData/" + String(DHT_SENSOR_ID), tempJson)) {
+      Serial.println("Temperature sent.");
+    } else {
+      Serial.print("Temperature failed: ");
+      Serial.println(firebaseData.errorReason());
+    }
+
+    Serial.print("Temperature: ");
+    Serial.println(temperature);
+  }
 
   delay(60000); // Delay 60 seconds
 }
@@ -220,15 +245,16 @@ void loop() {
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 3. Install library: FirebaseESP32
 4. Install library NTPClient 
-5. Sambungkan ESP32 ke komputer via USB
-6. Copy kode di bawah dan paste ke Arduino IDE
-7. Isi:
+5. Install library DHT11 
+6. Sambungkan ESP32 ke komputer via USB
+7. Copy kode di bawah dan paste ke Arduino IDE
+8. Isi:
    - WIFI_SSID dan WIFI_PASSWORD
    - SOIL_MOISTURE_PIN
    - FIREBASE_HOST dan FIREBASE_AUTH
    - USER_NAME dan SOIL_SENSOR_ID
-8. Upload ke board
-9. Lihat Serial Monitor, atur baudrate (115200)
+9. Upload ke board
+10. Lihat Serial Monitor, atur baudrate (115200)
     `}
         </Typography>
       </Card>

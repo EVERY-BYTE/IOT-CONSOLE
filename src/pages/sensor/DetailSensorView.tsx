@@ -80,6 +80,8 @@ export default function DetailSensorView() {
     }
   };
 
+  console.log("====chart series");
+  console.log(chartSeries);
   useEffect(() => {
     fetchDeviceData();
   }, [sensorId]);
@@ -113,7 +115,7 @@ export default function DetailSensorView() {
             <Typography variant="h6" gutterBottom>
               Sensor Info
             </Typography>
-            <Typography>id: {sensorId}</Typography>
+            <Typography>sensor id: {sensorId}</Typography>
             <Typography>name: {deviceName}</Typography>
             <Typography>type: {deviceType}</Typography>
             <Typography>user name: {email}</Typography>
@@ -121,33 +123,48 @@ export default function DetailSensorView() {
         </Grid>
 
         <Grid item xs={12}>
-          <Card sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              {deviceName} Chart
-            </Typography>
-            <ReactApexChart
-              options={{
-                ...chartOptions,
-                colors: [getChartColor(deviceType)],
-                title: { text: deviceName },
-              }}
-              series={chartSeries}
-              type="area"
+          {chartSeries.length && chartSeries[0].data.length > 1 ? (
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                {deviceName} Chart
+              </Typography>
+              <ReactApexChart
+                options={{
+                  ...chartOptions,
+                  colors: ["#8e44ad"],
+                  title: { text: deviceName },
+                }}
+                series={chartSeries}
+                type="area"
+                height={250}
+              />
+            </Card>
+          ) : (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
               height={250}
-            />
-          </Card>
+              color="text.secondary"
+            >
+              <Typography variant="h4" align="center">
+                Tidak ada data yang tersedia
+              </Typography>
+            </Box>
+          )}
         </Grid>
       </Grid>
     </Box>
   );
 }
 
-function getChartColor(sensorType: string): string {
-  const colors: { [key: string]: string } = {
-    TDS: "#00bcd4",
-    TEMPERATURE: "#ff5722",
-    HUMADITY: "#4caf50",
-    PH: "#8e44ad",
-  };
-  return colors[sensorType] || "#000";
-}
+// function getChartColor(sensorType: string): string {
+//   const colors: { [key: string]: string } = {
+//     TDS: "#00bcd4",
+//     TEMPERATURE: "#ff5722",
+//     HUMADITY: "#4caf50",
+//     PH: "#8e44ad", //"#8e44ad",
+//   };
+//   return colors[sensorType] || "#000";
+// }

@@ -136,10 +136,10 @@ export default function CreateSensorView() {
                 })
               }
             >
-              <MenuItem value="TDS">TDS</MenuItem>
-              <MenuItem value="TEMPERATURE">Temperature</MenuItem>
-              <MenuItem value="HUMADITY">Humidity</MenuItem>
-              <MenuItem value="PH">pH</MenuItem>
+              <MenuItem value="LDR">LDR</MenuItem>
+              <MenuItem value="SOIL_MOISTURE">SOIL_MOISTURE</MenuItem>
+              <MenuItem value="HUMADITY">HUMADITY</MenuItem>
+              <MenuItem value="DHT11_TEMPERATURE">DHT11_TEMPERATURE</MenuItem>
             </Select>
           </FormControl>
           <Stack direction={"row"} justifyContent="flex-end">
