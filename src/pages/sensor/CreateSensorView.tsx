@@ -138,7 +138,7 @@ export default function CreateSensorView() {
             >
               <MenuItem value="LDR">LDR</MenuItem>
               <MenuItem value="SOIL_MOISTURE">SOIL_MOISTURE</MenuItem>
-              <MenuItem value="HUMADITY">HUMADITY</MenuItem>
+              <MenuItem value="DS18B20">DS18B20</MenuItem>
               <MenuItem value="DHT11_TEMPERATURE">DHT11_TEMPERATURE</MenuItem>
             </Select>
           </FormControl>

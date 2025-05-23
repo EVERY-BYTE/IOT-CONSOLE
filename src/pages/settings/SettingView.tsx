@@ -51,13 +51,18 @@ export default function SettingView() {
 #include <FirebaseESP32.h>
 #include <WiFiUdp.h>
 #include <DHT.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define SOIL_MOISTURE_PIN 16
 #define LDR_PIN 35
 #define DHT_PIN 4
 #define DHT_TYPE DHT11
+#define DS18B20_PIN 5  
 
 DHT dht(DHT_PIN, DHT_TYPE);
+OneWire oneWire(DS18B20_PIN);
+DallasTemperature ds18b20(&oneWire);
 
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
@@ -70,7 +75,7 @@ DHT dht(DHT_PIN, DHT_TYPE);
 const char* SOIL_SENSOR_ID = "";
 const char* LDR_SENSOR_ID  = "";
 const char* DHT_SENSOR_ID = "";
-
+const char* DS18B20_SENSOR_ID = "";
 
 const char* ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 7 * 3600;
@@ -88,6 +93,7 @@ void setup() {
   pinMode(LDR_PIN, INPUT);
   
   dht.begin();
+  ds18b20.begin();
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi...");
@@ -183,6 +189,27 @@ void loop() {
     Serial.println(temperature);
   }
 
+  if (strlen(DS18B20_SENSOR_ID) > 0) {
+    ds18b20.requestTemperatures();
+    float dsTemp = ds18b20.getTempCByIndex(0);
+
+    if (!isnan(dsTemp)) {
+      FirebaseJson dsJson;
+      dsJson.set("value", dsTemp);
+      dsJson.set("timestamp", (unsigned long)epochTime);
+
+      if (Firebase.pushJSON(firebaseData, "/" + String(USER_NAME) + "/deviceData/" + String(DS18B20_SENSOR_ID), dsJson)) {
+        Serial.println("DS18B20 temperature sent.");
+      } else {
+        Serial.print("DS18B20 failed: ");
+        Serial.println(firebaseData.errorReason());
+      }
+
+      Serial.print("DS18B20 Temp: ");
+      Serial.println(dsTemp);
+    }
+  }
+
   delay(60000); // Delay 60 seconds
 }
 `;
@@ -240,21 +267,34 @@ void loop() {
           sx={{ whiteSpace: "pre-line" }}
         >
           {`
-1. Install Arduino IDE: https://www.arduino.cc/en/software
-2. Tambahkan ESP32 board URL ke Preferences:
-   https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-3. Install library: FirebaseESP32
-4. Install library NTPClient 
-5. Install library DHT11 
-6. Sambungkan ESP32 ke komputer via USB
-7. Copy kode di bawah dan paste ke Arduino IDE
-8. Isi:
+1. Install Libarary:
+   - FirebaseESP32
+   - NTPClient 
+   - DHT11 
+   - OneWire by Paul Stoffregen
+   - DallasTemperature by Miles Burton
+2. Sambungkan ESP32 ke komputer via USB
+3. Copy kode di bawah dan paste ke Arduino IDE
+4. Isi:
+  # AUTHENTICATION
    - WIFI_SSID dan WIFI_PASSWORD
-   - SOIL_MOISTURE_PIN
    - FIREBASE_HOST dan FIREBASE_AUTH
-   - USER_NAME dan SOIL_SENSOR_ID
-9. Upload ke board
-10. Lihat Serial Monitor, atur baudrate (115200)
+   - USER_NAME 
+  
+  # SENSOR PIN
+   - SOIL_MOISTURE_PIN 
+   - LDR_PIN 
+   - DHT_PIN
+   - DS18B20_PIN  
+
+  # SENSOR ID
+   - SOIL_SENSOR_ID
+   - LDR_SENSOR_ID
+   - DHT_SENSOR_ID
+   - DS18B20_SENSOR_ID
+   
+5. Upload ke board
+6. Lihat Serial Monitor, atur baudrate (115200)
     `}
         </Typography>
       </Card>

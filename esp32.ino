@@ -2,13 +2,18 @@
 #include <FirebaseESP32.h>
 #include <WiFiUdp.h>
 #include <DHT.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define SOIL_MOISTURE_PIN 16
 #define LDR_PIN 35
 #define DHT_PIN 4
 #define DHT_TYPE DHT11
+#define DS18B20_PIN 5  
 
 DHT dht(DHT_PIN, DHT_TYPE);
+OneWire oneWire(DS18B20_PIN);
+DallasTemperature ds18b20(&oneWire);
 
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
@@ -21,6 +26,8 @@ DHT dht(DHT_PIN, DHT_TYPE);
 const char* SOIL_SENSOR_ID = "";
 const char* LDR_SENSOR_ID  = "";
 const char* DHT_SENSOR_ID = "";
+const char* DS18B20_SENSOR_ID = "";
+
 
 
 const char* ntpServer = "pool.ntp.org";
@@ -39,6 +46,7 @@ void setup() {
   pinMode(LDR_PIN, INPUT);
   
   dht.begin();
+  ds18b20.begin();
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi...");
@@ -132,6 +140,27 @@ void loop() {
 
     Serial.print("Temperature: ");
     Serial.println(temperature);
+  }
+
+  if (strlen(DS18B20_SENSOR_ID) > 0) {
+    ds18b20.requestTemperatures();
+    float dsTemp = ds18b20.getTempCByIndex(0);
+
+    if (!isnan(dsTemp)) {
+      FirebaseJson dsJson;
+      dsJson.set("value", dsTemp);
+      dsJson.set("timestamp", (unsigned long)epochTime);
+
+      if (Firebase.pushJSON(firebaseData, "/" + String(USER_NAME) + "/deviceData/" + String(DS18B20_SENSOR_ID), dsJson)) {
+        Serial.println("DS18B20 temperature sent.");
+      } else {
+        Serial.print("DS18B20 failed: ");
+        Serial.println(firebaseData.errorReason());
+      }
+
+      Serial.print("DS18B20 Temp: ");
+      Serial.println(dsTemp);
+    }
   }
 
   delay(60000); // Delay 60 seconds
