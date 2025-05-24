@@ -48,16 +48,8 @@ export default function CreateSensorView() {
     }`;
 
     const payload = {
-      deviceName: device.deviceName,
-      deviceId: device.deviceId,
-      deviceUserName: currentUser.email,
-      deviceType: device.deviceType,
-      deviceValue: [
-        {
-          value: 0,
-          timeStamp: Date.now(),
-        },
-      ],
+      value: 0,
+      timeStamp: Date.now(),
     };
 
     await firebaseDb.create(dbPath, payload);

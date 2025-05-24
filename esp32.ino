@@ -15,16 +15,16 @@ DHT dht(DHT_PIN, DHT_TYPE);
 OneWire oneWire(DS18B20_PIN);
 DallasTemperature ds18b20(&oneWire);
 
-#define WIFI_SSID "POCO M4 PRO"
-#define WIFI_PASSWORD "instiper"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 #define FIREBASE_HOST "https://console-iot-default-rtdb.asia-southeast1.firebasedatabase.app/"
 #define FIREBASE_AUTH "AIzaSyC3fjOk-Xs7vN4eqbPbvgKzmhTCjo9DOQM"
 
-#define USER_NAME "ikhsanddt7@gmailcom"
+#define USER_NAME ""
 
 // isi sensor ID-nya supaya bisa kirim data
-const char* SOIL_SENSOR_ID = "223a8e1b-1fb3-428f-b562-338e4b92a8a7";
+const char* SOIL_SENSOR_ID = "";
 const char* LDR_SENSOR_ID  = "";
 const char* DHT_SENSOR_ID  = "";
 const char* DS18B20_SENSOR_ID = "";

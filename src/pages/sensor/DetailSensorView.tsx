@@ -48,6 +48,9 @@ export default function DetailSensorView() {
       const path = `${email}/deviceData/${sensorId}`;
       const result: any = await firebaseDb.read(path);
 
+      console.log("===senosrs detail");
+      console.log(result);
+
       const sensorPath = `${email}/devices`;
       const sensors = (await firebaseDb.read(sensorPath)) as IDeviceModel[];
 
@@ -158,13 +161,3 @@ export default function DetailSensorView() {
     </Box>
   );
 }
-
-// function getChartColor(sensorType: string): string {
-//   const colors: { [key: string]: string } = {
-//     TDS: "#00bcd4",
-//     TEMPERATURE: "#ff5722",
-//     HUMADITY: "#4caf50",
-//     PH: "#8e44ad", //"#8e44ad",
-//   };
-//   return colors[sensorType] || "#000";
-// }
