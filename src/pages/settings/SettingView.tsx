@@ -78,7 +78,7 @@ const char* LDR_SENSOR_ID  = "";
 const char* DHT_SENSOR_ID  = "";
 const char* DS18B20_SENSOR_ID = "";
 
-const char* ntpServer = "pool.ntp.org";
+const char* ntpServer = "id.pool.ntp.org";
 const long gmtOffset_sec = 7 * 3600;
 const int daylightOffset_sec = 0;
 
