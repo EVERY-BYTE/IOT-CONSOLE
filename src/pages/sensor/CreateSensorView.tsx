@@ -32,20 +32,43 @@ export default function CreateSensorView() {
   const createDevice = async () => {
     const dbPath = `${removeDotsFromEmail(currentUser.email)}/devices`;
 
-    const payload: IDeviceCreateModel = {
-      deviceName: device.deviceName,
-      deviceId: device.deviceId,
-      deviceUserName: currentUser.email,
-      deviceType: device.deviceType,
-    };
+    if (device.deviceType === "DHT11") {
+      const payload1: IDeviceCreateModel = {
+        deviceName: device.deviceName,
+        deviceId: uuidv4(),
+        deviceUserName: currentUser.email,
+        deviceType: "DHT_TEMPERATURE",
+      };
 
-    await firebaseDb.create(dbPath, payload);
+      const payload2: IDeviceCreateModel = {
+        deviceName: device.deviceName,
+        deviceId: uuidv4(),
+        deviceUserName: currentUser.email,
+        deviceType: "DHT_HUMIDITY",
+      };
+
+      await firebaseDb.create(dbPath, payload1);
+      await createDeviceData(payload1.deviceId);
+
+      await firebaseDb.create(dbPath, payload2);
+      await createDeviceData(payload2.deviceId);
+    } else {
+      const payload: IDeviceCreateModel = {
+        deviceName: device.deviceName,
+        deviceId: device.deviceId,
+        deviceUserName: currentUser.email,
+        deviceType: device.deviceType,
+      };
+
+      await firebaseDb.create(dbPath, payload);
+
+      await createDeviceData(device.deviceId);
+    }
   };
 
-  const createDeviceData = async () => {
-    const dbPath = `${removeDotsFromEmail(currentUser.email)}/deviceData/${
-      device.deviceId
-    }`;
+  const createDeviceData = async (deviceId: string) => {
+    const email = removeDotsFromEmail(currentUser.email);
+    const dbPath = `${email}/deviceData/${deviceId}`;
 
     const payload = {
       value: 0,
@@ -58,7 +81,6 @@ export default function CreateSensorView() {
   const handleSubmit = async () => {
     try {
       await createDevice();
-      await createDeviceData();
       window.history.back();
     } catch (error: unknown) {
       console.log(error);
@@ -131,7 +153,7 @@ export default function CreateSensorView() {
               <MenuItem value="LDR">LDR</MenuItem>
               <MenuItem value="SOIL_MOISTURE">SOIL_MOISTURE</MenuItem>
               <MenuItem value="DS18B20">DS18B20</MenuItem>
-              <MenuItem value="DHT11_TEMPERATURE">DHT11_TEMPERATURE</MenuItem>
+              <MenuItem value="DHT11">DHT11</MenuItem>
             </Select>
           </FormControl>
           <Stack direction={"row"} justifyContent="flex-end">

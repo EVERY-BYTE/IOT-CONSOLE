@@ -26,7 +26,8 @@ DallasTemperature ds18b20(&oneWire);
 // isi sensor ID-nya supaya bisa kirim data
 const char* SOIL_SENSOR_ID = "";
 const char* LDR_SENSOR_ID  = "";
-const char* DHT_SENSOR_ID  = "";
+const char* DHT_TEMPERATURE_SENSOR_ID  = "";
+const char* DHT_HUMIDITY_SENSOR_ID = "";
 const char* DS18B20_SENSOR_ID = "";
 
 const char* ntpServer = "pool.ntp.org";
@@ -121,13 +122,12 @@ void loop() {
   }
   
   float temperature = dht.readTemperature();
-
-  if (strlen(DHT_SENSOR_ID) > 0 && !isnan(temperature)) {
+  if (strlen(DHT_TEMPERATURE_SENSOR_ID) > 0 && !isnan(temperature)) {
     FirebaseJson tempJson;
     tempJson.set("value", temperature);
     tempJson.set("timestamp", (unsigned long)epochTime);
 
-    if (Firebase.pushJSON(firebaseData, String("/") + USER_NAME + "/deviceData/" + DHT_SENSOR_ID, tempJson)) {
+    if (Firebase.pushJSON(firebaseData, String("/") + USER_NAME + "/deviceData/" + DHT_TEMPERATURE_SENSOR_ID, tempJson)) {
       Serial.println("Temperature sent.");
     } else {
       Serial.print("Temperature failed: ");
@@ -136,6 +136,24 @@ void loop() {
 
     Serial.print("Temperature: ");
     Serial.println(temperature);
+  }
+
+// Humidity from DHT11
+  float humidity = dht.readHumidity();
+  if (strlen(DHT_HUMIDITY_SENSOR_ID) > 0 && !isnan(humidity)) {
+    FirebaseJson humidJson;
+    humidJson.set("value", humidity);
+    humidJson.set("timestamp", (unsigned long)epochTime);
+
+    if (Firebase.pushJSON(firebaseData, String("/") + USER_NAME + "/deviceData/" + DHT_HUMIDITY_SENSOR_ID, humidJson)) {
+      Serial.println("Humidity sent.");
+    } else {
+      Serial.print("Humidity failed: ");
+      Serial.println(firebaseData.errorReason());
+    }
+
+    Serial.print("Humidity: ");
+    Serial.println(humidity);
   }
 
   if (strlen(DS18B20_SENSOR_ID) > 0) {
