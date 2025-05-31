@@ -2,12 +2,10 @@
 import { useEffect, useState } from "react";
 import { Box, Card, Typography, Button } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { firebaseDb } from "../../firebase/db";
 import { firebaseAuth } from "../../firebase/auth";
 import { removeDotsFromEmail } from "../../utilities/removeDotsFromEmail";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { IDeviceModel } from "../../models/deviceModel";
 import { firebaseConfig } from "../../firebase/configs";
 
 export default function SettingView() {
@@ -25,14 +23,7 @@ export default function SettingView() {
   useEffect(() => {
     const fetchDeviceData = async () => {
       try {
-        const path = `${email}/devices`;
-        const data = await firebaseDb.readAll(path);
-        const devices = Object.entries(data).map(([deviceId, device]) => ({
-          id: deviceId,
-          deviceId,
-          ...(device as any),
-        }));
-        generateEsp32Code(devices);
+        generateEsp32Code();
       } catch (error) {
         console.error("Error fetching device data:", error);
       } finally {
@@ -43,9 +34,7 @@ export default function SettingView() {
     fetchDeviceData();
   }, [email]);
 
-  const generateEsp32Code = (devices: IDeviceModel[]) => {
-    console.log(devices);
-    console.log("Generating ESP32 code...");
+  const generateEsp32Code = () => {
     const code = `
 #include <WiFi.h>
 #include <FirebaseESP32.h>
@@ -70,7 +59,7 @@ DallasTemperature ds18b20(&oneWire);
 #define FIREBASE_HOST "${firebaseConfig.databaseURL}"
 #define FIREBASE_AUTH "${firebaseConfig.apiKey}"
 
-#define USER_NAME ""
+#define USER_NAME "${esp32Config.userEmail}"
 
 // isi sensor ID-nya supaya bisa kirim data
 const char* SOIL_SENSOR_ID = "";
