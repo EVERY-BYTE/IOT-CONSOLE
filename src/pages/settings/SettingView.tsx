@@ -67,8 +67,8 @@ DallasTemperature ds18b20(&oneWire);
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
 
-#define FIREBASE_HOST "https://console-iot-default-rtdb.asia-southeast1.firebasedatabase.app/"
-#define FIREBASE_AUTH "AIzaSyC3fjOk-Xs7vN4eqbPbvgKzmhTCjo9DOQM"
+#define FIREBASE_HOST "${firebaseConfig.databaseURL}"
+#define FIREBASE_AUTH "${firebaseConfig.apiKey}"
 
 #define USER_NAME ""
 
