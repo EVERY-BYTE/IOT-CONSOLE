@@ -214,7 +214,7 @@ void loop() {
     }
   }
 
-  delay(60000); // Delay 60 seconds
+  delay(60000 * 30); // Delay 60 seconds x 30 = 30 menit
 }
 `;
 
