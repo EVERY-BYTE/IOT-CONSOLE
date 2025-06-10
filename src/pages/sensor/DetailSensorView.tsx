@@ -7,6 +7,9 @@ import { firebaseDb } from "../../firebase/db";
 import { ApexOptions } from "apexcharts";
 import { IDeviceModel } from "../../models/deviceModel";
 import { useParams } from "react-router-dom";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 const chartOptions: ApexOptions = {
   chart: {
@@ -34,14 +37,31 @@ const chartOptions: ApexOptions = {
   },
 };
 
+// Modular function to adjust timestamp to WIB (UTC+7)
+const adjustToWIB = (timestamp: number): Date => {
+  const WIB_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
+  return new Date(timestamp * 1000 + WIB_OFFSET);
+};
+
+// New modular function to filter data by date range
+const filterDataByDateRange = (
+  data: any[],
+  startDate: Date | null,
+  endDate: Date | null
+): any[] => {
+  if (!startDate || !endDate) return data; // Return all data if either date is null
+  return data.filter((entry) => entry.x >= startDate && entry.x <= endDate);
+};
+
 export default function DetailSensorView() {
-  // const email = "dellafitriana702@gmailcom";
-  // const sensorId = "bfba91df-0b98-4a8d-8649-1bd720a6cdd5";
   const { email, sensorId } = useParams();
   const [chartSeries, setChartSeries] = useState<any[]>([]);
   const [deviceName, setDeviceName] = useState("Sensor");
   const [deviceType, setDeviceType] = useState("GENERIC");
   const [deviceValue, setDeviceValue] = useState<any[]>([]);
+  const [allData, setAllData] = useState<any[]>([]); // Store unfiltered data
+  const [startDate, setStartDate] = useState<Date | null>(null); // Default to null for all data
+  const [endDate, setEndDate] = useState<Date | null>(null); // Default to null for all data
 
   const fetchDeviceData = async () => {
     try {
@@ -49,10 +69,6 @@ export default function DetailSensorView() {
 
       const path = `${email}/deviceData/${sensorId}`;
       const result: any = await firebaseDb.read(path);
-
-      console.log("===sensors detail");
-      console.log(path);
-      console.log(result);
 
       const sensorPath = `${email}/devices`;
       const sensors = (await firebaseDb.read(sensorPath)) as IDeviceModel[];
@@ -71,6 +87,7 @@ export default function DetailSensorView() {
       if (!result) {
         setChartSeries([]);
         setDeviceValue([]);
+        setAllData([]);
         return;
       }
 
@@ -78,16 +95,22 @@ export default function DetailSensorView() {
       const formattedData = entries
         .filter((entry: any) => entry.timestamp && !isNaN(entry.timestamp))
         .map((entry: any) => ({
-          x: new Date(entry.timestamp * 1000),
+          x: adjustToWIB(entry.timestamp),
           y: entry.value,
         }))
         .filter((data) => !isNaN(data.x.getTime())); // Ensure valid Date objects
 
-      setDeviceValue(formattedData);
+      setAllData(formattedData); // Store unfiltered data
+      const filteredData = filterDataByDateRange(
+        formattedData,
+        startDate,
+        endDate
+      ); // Apply date range filter
+      setDeviceValue(filteredData);
       setChartSeries([
         {
           name: "Sensor Value",
-          data: formattedData,
+          data: filteredData,
           group: "apexcharts-axis-0",
         },
       ]);
@@ -95,12 +118,26 @@ export default function DetailSensorView() {
       console.error("Error fetching device data:", error);
       setChartSeries([]);
       setDeviceValue([]);
+      setAllData([]);
     }
   };
 
   useEffect(() => {
     fetchDeviceData();
   }, [sensorId]);
+
+  useEffect(() => {
+    // Reapply filter when startDate or endDate changes
+    const filteredData = filterDataByDateRange(allData, startDate, endDate);
+    setDeviceValue(filteredData);
+    setChartSeries([
+      {
+        name: "Sensor Value",
+        data: filteredData,
+        group: "apexcharts-axis-0",
+      },
+    ]);
+  }, [startDate, endDate, allData]);
 
   const handleExport = () => {
     const worksheet = XLSX.utils.json_to_sheet(
@@ -114,15 +151,10 @@ export default function DetailSensorView() {
     XLSX.writeFile(workbook, `${deviceName}_data.xlsx`);
   };
 
-  // if (!deviceValue.length) return <div>Loading...</div>;
-
   return (
     <Box sx={{ p: 3 }}>
       <Stack direction="row" justifyContent="space-between" mb={3}>
         <Typography variant="h4">{deviceName}</Typography>
-        <Button variant="contained" onClick={handleExport}>
-          Export to Excel
-        </Button>
       </Stack>
 
       <Grid container spacing={3}>
@@ -138,12 +170,32 @@ export default function DetailSensorView() {
           </Card>
         </Grid>
 
+        <Stack direction="row" spacing={2} mt={5} p={3}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateTimePicker
+              label="Start Date"
+              value={startDate}
+              onChange={(newValue) => setStartDate(newValue)}
+              slotProps={{ textField: { size: "small" } }}
+            />
+            <DateTimePicker
+              label="End Date"
+              value={endDate}
+              onChange={(newValue) => setEndDate(newValue)}
+              slotProps={{ textField: { size: "small" } }}
+            />
+          </LocalizationProvider>
+          <Button variant="contained" onClick={handleExport}>
+            Export to Excel
+          </Button>
+        </Stack>
+
         <Grid item xs={12}>
           {chartSeries.length && chartSeries[0].data.length > 1 ? (
             <Card sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
+              {/* <Typography variant="h6" gutterBottom>
                 {deviceName} Chart
-              </Typography>
+              </Typography> */}
               <ReactApexChart
                 options={{
                   ...chartOptions,
