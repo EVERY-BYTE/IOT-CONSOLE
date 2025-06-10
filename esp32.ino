@@ -18,10 +18,10 @@ DallasTemperature ds18b20(&oneWire);
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
 
-#define FIREBASE_HOST "https://console-iot-default-rtdb.asia-southeast1.firebasedatabase.app/"
-#define FIREBASE_AUTH "AIzaSyC3fjOk-Xs7vN4eqbPbvgKzmhTCjo9DOQM"
+#define FIREBASE_HOST "${firebaseConfig.databaseURL}"
+#define FIREBASE_AUTH "${firebaseConfig.apiKey}"
 
-#define USER_NAME ""
+#define USER_NAME "${esp32Config.userEmail}"
 
 // isi sensor ID-nya supaya bisa kirim data
 const char* SOIL_SENSOR_ID = "";
@@ -30,7 +30,7 @@ const char* DHT_TEMPERATURE_SENSOR_ID  = "";
 const char* DHT_HUMIDITY_SENSOR_ID = "";
 const char* DS18B20_SENSOR_ID = "";
 
-const char* ntpServer = "pool.ntp.org";
+const char* ntpServer = "id.pool.ntp.org";
 const long gmtOffset_sec = 7 * 3600;
 const int daylightOffset_sec = 0;
 
@@ -123,8 +123,11 @@ void loop() {
   
   float temperature = dht.readTemperature();
   if (strlen(DHT_TEMPERATURE_SENSOR_ID) > 0 && !isnan(temperature)) {
+
+    int tempInt = round(temperature);
+
     FirebaseJson tempJson;
-    tempJson.set("value", temperature);
+    tempJson.set("value", tempInt);
     tempJson.set("timestamp", (unsigned long)epochTime);
 
     if (Firebase.pushJSON(firebaseData, String("/") + USER_NAME + "/deviceData/" + DHT_TEMPERATURE_SENSOR_ID, tempJson)) {
@@ -135,14 +138,17 @@ void loop() {
     }
 
     Serial.print("Temperature: ");
-    Serial.println(temperature);
+    Serial.print(tempInt);
+    Serial.println(" °C");
   }
 
-// Humidity from DHT11
   float humidity = dht.readHumidity();
   if (strlen(DHT_HUMIDITY_SENSOR_ID) > 0 && !isnan(humidity)) {
+
+    int humidInt = round(humidity);
+
     FirebaseJson humidJson;
-    humidJson.set("value", humidity);
+    humidJson.set("value", humidInt);
     humidJson.set("timestamp", (unsigned long)epochTime);
 
     if (Firebase.pushJSON(firebaseData, String("/") + USER_NAME + "/deviceData/" + DHT_HUMIDITY_SENSOR_ID, humidJson)) {
@@ -153,7 +159,8 @@ void loop() {
     }
 
     Serial.print("Humidity: ");
-    Serial.println(humidity);
+    Serial.print(humidInt);
+    Serial.println(" %");
   }
 
   if (strlen(DS18B20_SENSOR_ID) > 0) {
@@ -177,5 +184,5 @@ void loop() {
     }
   }
 
-  delay(60000); // Delay 60 seconds
+  delay(60000 * 30); // Delay 60 seconds x 30 = 30 menit
 }

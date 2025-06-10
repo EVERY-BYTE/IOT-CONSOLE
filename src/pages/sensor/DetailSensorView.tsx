@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import { Box, Grid, Card, Typography, Button, Stack } from "@mui/material";
 import ReactApexChart from "react-apexcharts";
 import * as XLSX from "xlsx";
 import { firebaseDb } from "../../firebase/db";
 import { ApexOptions } from "apexcharts";
 import { IDeviceModel } from "../../models/deviceModel";
+import { useParams } from "react-router-dom";
 
 const chartOptions: ApexOptions = {
   chart: {
@@ -35,6 +35,8 @@ const chartOptions: ApexOptions = {
 };
 
 export default function DetailSensorView() {
+  // const email = "dellafitriana702@gmailcom";
+  // const sensorId = "bfba91df-0b98-4a8d-8649-1bd720a6cdd5";
   const { email, sensorId } = useParams();
   const [chartSeries, setChartSeries] = useState<any[]>([]);
   const [deviceName, setDeviceName] = useState("Sensor");
@@ -48,7 +50,8 @@ export default function DetailSensorView() {
       const path = `${email}/deviceData/${sensorId}`;
       const result: any = await firebaseDb.read(path);
 
-      console.log("===senosrs detail");
+      console.log("===sensors detail");
+      console.log(path);
       console.log(result);
 
       const sensorPath = `${email}/devices`;
@@ -65,26 +68,36 @@ export default function DetailSensorView() {
         }
       }
 
+      if (!result) {
+        setChartSeries([]);
+        setDeviceValue([]);
+        return;
+      }
+
       const entries = Object.values(result) as any[];
-      const formattedData = entries.map((entry: any) => ({
-        x: new Date(entry.timestamp * 1000),
-        y: entry.value,
-      }));
+      const formattedData = entries
+        .filter((entry: any) => entry.timestamp && !isNaN(entry.timestamp))
+        .map((entry: any) => ({
+          x: new Date(entry.timestamp * 1000),
+          y: entry.value,
+        }))
+        .filter((data) => !isNaN(data.x.getTime())); // Ensure valid Date objects
 
       setDeviceValue(formattedData);
       setChartSeries([
         {
           name: "Sensor Value",
           data: formattedData,
+          group: "apexcharts-axis-0",
         },
       ]);
     } catch (error) {
       console.error("Error fetching device data:", error);
+      setChartSeries([]);
+      setDeviceValue([]);
     }
   };
 
-  console.log("====chart series");
-  console.log(chartSeries);
   useEffect(() => {
     fetchDeviceData();
   }, [sensorId]);
@@ -101,7 +114,7 @@ export default function DetailSensorView() {
     XLSX.writeFile(workbook, `${deviceName}_data.xlsx`);
   };
 
-  if (!deviceValue.length) return <div>Loading...</div>;
+  // if (!deviceValue.length) return <div>Loading...</div>;
 
   return (
     <Box sx={{ p: 3 }}>
